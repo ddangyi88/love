@@ -1,1 +1,1336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘의 명언 캡슐 뽑기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pale-banana: #F3E5AB;
+      --pale-banana-light: #FAF2D0;
+      --pale-banana-dark: #E0CE84;
+      --downtown-brown: #5A4236;
+      --downtown-brown-dark: #3E2C23;
+      --downtown-brown-light: #7B5D4D;
+      --paper-cream: #FFFDF7;
+      --paper-line: #EFE7D6;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--downtown-brown);
+      overflow-x: hidden;
+      padding: 20px 16px;
+      position: relative;
+      background-color: #dce9d5;
+    }
+
+    /* 배경 캔버스 */
+    #scenery-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* 배경과 일러스트 가챠 기계를 자연스럽게 이어주는 은은한 햇살 비네팅 */
+    .atmosphere-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(255, 250, 232, 0.28) 0%, rgba(255, 248, 225, 0.08) 55%, rgba(45, 58, 42, 0.14) 100%);
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    /* 헤더 타이틀 */
+    .header {
+      text-align: center;
+      margin-bottom: 14px;
+      background: rgba(255, 252, 240, 0.84);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 12px 24px 13px;
+      border-radius: 24px;
+      border: 2.5px solid rgba(90, 66, 54, 0.25);
+      box-shadow: 0 8px 20px rgba(45, 36, 28, 0.14);
+    }
+
+    .header h1 {
+      font-family: 'Jua', sans-serif;
+      font-size: 1.82rem;
+      color: var(--downtown-brown);
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .header p {
+      font-size: 0.86rem;
+      color: var(--downtown-brown-light);
+      font-weight: 500;
+    }
+
+    /* 가챠 기계 전체 */
+    .gacha-machine {
+      position: relative;
+      width: 310px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      filter: drop-shadow(0 18px 26px rgba(36, 30, 22, 0.28));
+    }
+
+    /* 기계 밑바닥 접지 그림자 */
+    .machine-ground-shadow {
+      position: absolute;
+      bottom: -8px;
+      width: 280px;
+      height: 24px;
+      background: radial-gradient(ellipse at center, rgba(35, 30, 22, 0.42) 0%, rgba(35, 30, 22, 0) 72%);
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* 기계 상단 뚜껑 */
+    .machine-cap {
+      width: 170px;
+      height: 26px;
+      background: var(--downtown-brown);
+      border-radius: 20px 20px 6px 6px;
+      border: 4px solid var(--downtown-brown-dark);
+      position: relative;
+      z-index: 3;
+      box-shadow: inset 0 4px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .machine-cap::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 12px;
+      background: var(--pale-banana);
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 10px;
+    }
+
+    /* 유리 돔 (캡슐 보관함) */
+    .machine-globe {
+      width: 276px;
+      height: 242px;
+      background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.88) 0%, rgba(250, 245, 228, 0.68) 65%, rgba(232, 220, 178, 0.78) 100%);
+      border: 5px solid var(--downtown-brown-dark);
+      border-radius: 50% 50% 42% 42% / 55% 55% 38% 38%;
+      margin-top: -6px;
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+      box-shadow:
+        inset -12px -14px 24px rgba(90, 66, 54, 0.14),
+        inset 10px 12px 20px rgba(255, 255, 255, 0.85);
+    }
+
+    /* 유리 반사광 */
+    .globe-shine {
+      position: absolute;
+      top: 22px;
+      left: 26px;
+      width: 46px;
+      height: 82px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.06));
+      transform: rotate(-24deg);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* 돔 내부 캡슐들 */
+    .capsules-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .mini-capsule {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 3px solid var(--downtown-brown-dark);
+      overflow: hidden;
+      box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.14), 0 3px 5px rgba(62, 44, 35, 0.2);
+      transition: transform 0.2s ease;
+    }
+
+    .mini-capsule::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--top-color);
+      border-bottom: 2.5px solid var(--downtown-brown-dark);
+    }
+
+    .mini-capsule::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--bottom-color);
+    }
+
+    .mini-capsule .shine {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      width: 11px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      transform: rotate(-25deg);
+      z-index: 2;
+    }
+
+    /* 캡슐 흔들림 애니메이션 */
+    .gacha-machine.shaking .mini-capsule {
+      animation: bounceCapsule 0.22s infinite alternate ease-in-out;
+    }
+
+    .gacha-machine.shaking .mini-capsule:nth-child(odd) {
+      animation-direction: alternate-reverse;
+      animation-duration: 0.18s;
+    }
+
+    .gacha-machine.shaking .machine-globe {
+      animation: machineWobble 0.15s infinite alternate ease-in-out;
+    }
+
+    @keyframes bounceCapsule {
+      0% { transform: translate(0, 0) rotate(var(--rot)); }
+      100% { transform: translate(var(--dx, 6px), -22px) rotate(calc(var(--rot) + 25deg)); }
+    }
+
+    @keyframes machineWobble {
+      0% { transform: rotate(-1.5deg); }
+      100% { transform: rotate(1.5deg); }
+    }
+
+    /* 중간 연결 띠 */
+    .machine-collar {
+      width: 232px;
+      height: 22px;
+      background: var(--downtown-brown);
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 12px;
+      margin-top: -10px;
+      z-index: 3;
+      box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    /* 하단 본체 */
+    .machine-body {
+      width: 256px;
+      height: 185px;
+      background: linear-gradient(180deg, var(--pale-banana-light) 0%, var(--pale-banana) 100%);
+      border: 5px solid var(--downtown-brown-dark);
+      border-radius: 22px 22px 28px 28px;
+      margin-top: -4px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+      box-shadow: inset -8px -10px 0 rgba(224, 206, 132, 0.65);
+    }
+
+    /* 왼쪽: 손잡이 다이얼 영역 */
+    .dial-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .coin-plate {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: var(--pale-banana-light);
+      border: 4px solid var(--downtown-brown-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 3px 6px rgba(90, 66, 54, 0.16);
+      cursor: pointer;
+    }
+
+    .dial-handle {
+      width: 68px;
+      height: 22px;
+      background: var(--downtown-brown);
+      border: 3.5px solid var(--downtown-brown-dark);
+      border-radius: 12px;
+      position: relative;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 3px 0 var(--downtown-brown-dark);
+    }
+
+    .dial-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--pale-banana);
+      border: 3px solid var(--downtown-brown-dark);
+    }
+
+    .dial-handle.spinning {
+      transform: rotate(360deg);
+    }
+
+    .coin-slot {
+      width: 36px;
+      height: 10px;
+      background: var(--downtown-brown-dark);
+      border-radius: 6px;
+      border: 2px solid var(--downtown-brown);
+    }
+
+    /* 오른쪽: 캡슐 배출구 */
+    .dispenser-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mini-label {
+      background: var(--downtown-brown);
+      color: var(--pale-banana-light);
+      font-family: 'Jua', sans-serif;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .dispenser-door {
+      width: 96px;
+      height: 98px;
+      background: var(--downtown-brown-dark);
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 16px 16px 20px 20px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 8px;
+      box-shadow: inset 0 10px 16px rgba(0, 0, 0, 0.45);
+    }
+
+    .dispenser-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 36px;
+      background: rgba(123, 93, 77, 0.45);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.14);
+      pointer-events: none;
+    }
+
+    /* 배출구에 굴러나온 캡슐 */
+    .dropped-capsule {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 3.5px solid var(--downtown-brown-dark);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      display: none;
+      z-index: 5;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      animation: dropAndBounce 0.6s cubic-bezier(0.28, 0.84, 0.42, 1) forwards, pulseGlow 1.5s infinite ease-in-out 0.6s;
+    }
+
+    .dropped-capsule::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--drop-top, #F3E5AB);
+      border-bottom: 3px solid var(--downtown-brown-dark);
+    }
+
+    .dropped-capsule::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--drop-bottom, #7B5D4D);
+    }
+
+    .dropped-capsule .shine {
+      position: absolute;
+      top: 8px;
+      left: 11px;
+      width: 15px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.82);
+      border-radius: 50%;
+      transform: rotate(-25deg);
+      z-index: 2;
+    }
+
+    @keyframes dropAndBounce {
+      0% { transform: translateY(-70px) scale(0.7) rotate(-45deg); opacity: 0; }
+      50% { transform: translateY(0) scale(1.05) rotate(10deg); opacity: 1; }
+      75% { transform: translateY(-10px) scale(0.98) rotate(-5deg); }
+      100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    /* 기계 받침대 */
+    .machine-feet {
+      width: 230px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: -3px;
+      z-index: 1;
+    }
+
+    .foot {
+      width: 48px;
+      height: 16px;
+      background: var(--downtown-brown-dark);
+      border-radius: 0 0 12px 12px;
+    }
+
+    /* 컨트롤 버튼 및 안내 */
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .draw-btn {
+      background: var(--downtown-brown);
+      color: var(--pale-banana-light);
+      font-family: 'Jua', sans-serif;
+      font-size: 1.24rem;
+      padding: 14px 36px;
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 var(--downtown-brown-dark), 0 12px 20px rgba(45, 36, 28, 0.24);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .draw-btn:hover:not(:disabled) {
+      background: var(--downtown-brown-light);
+    }
+
+    .draw-btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--downtown-brown-dark);
+    }
+
+    .draw-btn:disabled {
+      opacity: 0.78;
+      cursor: not-allowed;
+    }
+
+    .hint-text {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--downtown-brown);
+      min-height: 28px;
+      text-align: center;
+      background: rgba(255, 252, 240, 0.86);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 5px 16px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(90, 66, 54, 0.22);
+      box-shadow: 0 4px 12px rgba(45, 36, 28, 0.1);
+    }
+
+    .hint-highlight {
+      color: #8C4A27;
+      font-weight: 700;
+      animation: blinkText 1.2s infinite;
+    }
+
+    @keyframes blinkText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+
+    /* 모달 오버레이 (캡슐 개봉 및 명언 종이) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(42, 32, 24, 0.56);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* 열린 캡슐 반쪽 연출 */
+    .open-capsule-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .capsule-half-top {
+      width: 112px;
+      height: 56px;
+      background: var(--modal-cap-top, var(--pale-banana));
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 60px 60px 6px 6px;
+      margin-bottom: -14px;
+      z-index: 2;
+      position: relative;
+      box-shadow: inset -6px -4px 10px rgba(0, 0, 0, 0.1);
+      animation: popTop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .capsule-half-top::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 18px;
+      width: 24px;
+      height: 11px;
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 50%;
+      transform: rotate(-20deg);
+    }
+
+    @keyframes popTop {
+      0% { transform: translateY(30px) scale(0.8); opacity: 0; }
+      100% { transform: translateY(0) scale(1) rotate(-6deg); opacity: 1; }
+    }
+
+    /* 돌돌 말렸다가 펼쳐지는 명언 종이 쪽지 */
+    .paper-scroll {
+      width: 100%;
+      background: var(--paper-cream);
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 31px,
+        var(--paper-line) 32px
+      );
+      border: 3.5px solid var(--downtown-brown-dark);
+      border-radius: 16px;
+      padding: 34px 26px 28px;
+      box-shadow: 0 18px 36px rgba(35, 24, 18, 0.35);
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      transform-origin: center center;
+      animation: unfoldPaper 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes unfoldPaper {
+      0% {
+        transform: scaleY(0.15) scaleX(0.6);
+        opacity: 0;
+      }
+      60% {
+        transform: scaleY(1.03) scaleX(1.01);
+        opacity: 1;
+      }
+      100% {
+        transform: scaleY(1) scaleX(1);
+        opacity: 1;
+      }
+    }
+
+    /* 종이 상단 말린 테이프/장식 */
+    .paper-badge {
+      display: inline-block;
+      background: var(--pale-banana);
+      color: var(--downtown-brown-dark);
+      font-family: 'Jua', sans-serif;
+      font-size: 0.85rem;
+      padding: 4px 14px;
+      border-radius: 999px;
+      border: 2px solid var(--downtown-brown-dark);
+      margin-bottom: 18px;
+    }
+
+    .quote-text {
+      font-family: 'Gowun Batang', serif;
+      font-size: 1.28rem;
+      font-weight: 700;
+      line-height: 1.75;
+      color: var(--downtown-brown-dark);
+      word-break: keep-all;
+      margin-bottom: 18px;
+    }
+
+    .quote-author {
+      font-family: 'Gowun Batang', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--downtown-brown-light);
+      margin-bottom: 24px;
+    }
+
+    .paper-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .action-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2.5px solid var(--downtown-brown-dark);
+      transition: transform 0.1s ease, background-color 0.2s ease;
+    }
+
+    .action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-copy {
+      background: var(--pale-banana-light);
+      color: var(--downtown-brown-dark);
+    }
+
+    .btn-copy:hover {
+      background: var(--pale-banana);
+    }
+
+    .btn-again {
+      background: var(--downtown-brown);
+      color: var(--pale-banana-light);
+    }
+
+    .btn-again:hover {
+      background: var(--downtown-brown-light);
+    }
+
+    .capsule-half-bottom {
+      width: 112px;
+      height: 52px;
+      background: var(--modal-cap-bottom, var(--downtown-brown-light));
+      border: 4px solid var(--downtown-brown-dark);
+      border-radius: 6px 6px 60px 60px;
+      margin-top: -12px;
+      z-index: 2;
+      box-shadow: inset -6px -6px 10px rgba(0, 0, 0, 0.18);
+      animation: popBottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes popBottom {
+      0% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+      100% { transform: translateY(0) scale(1) rotate(4deg); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 반실사 수채화·애니메이션 스타일 가로수길 풍경 캔버스 -->
+  <canvas id="scenery-canvas"></canvas>
+  <div class="atmosphere-overlay"></div>
+
+  <div class="app-container">
+    <div class="header">
+      <h1>오늘의 명언 캡슐 뽑기</h1>
+      <p>손잡이를 돌려 오늘 나에게 온 문장을 확인해 보세요</p>
+    </div>
+
+    <div class="gacha-machine" id="gachaMachine">
+      <div class="machine-cap"></div>
+
+      <div class="machine-globe">
+        <div class="globe-shine"></div>
+        <div class="capsules-container" id="capsulesContainer"></div>
+      </div>
+
+      <div class="machine-collar"></div>
+
+      <div class="machine-body">
+        <!-- 왼쪽 손잡이 -->
+        <div class="dial-section">
+          <div class="coin-plate" id="dialTrigger" title="클릭해서 돌리기">
+            <div class="dial-handle" id="dialHandle"></div>
+          </div>
+          <div class="coin-slot"></div>
+        </div>
+
+        <!-- 오른쪽 배출구 -->
+        <div class="dispenser-section">
+          <span class="mini-label">CAPSULE OUT</span>
+          <div class="dispenser-door" id="dispenserDoor">
+            <div class="dispenser-flap"></div>
+            <div class="dropped-capsule" id="droppedCapsule" title="클릭해서 캡슐 열기!">
+              <div class="shine"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="machine-feet">
+        <div class="foot"></div>
+        <div class="foot"></div>
+      </div>
+
+      <div class="machine-ground-shadow"></div>
+    </div>
+
+    <div class="controls">
+      <button class="draw-btn" id="drawBtn">
+        <span>뽑기 돌리기</span>
+      </button>
+      <div class="hint-text" id="hintText">버튼이나 기계 손잡이를 눌러 캡슐을 뽑아보세요!</div>
+    </div>
+  </div>
+
+  <!-- 캡슐 열기 모달 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="open-capsule-wrapper">
+      <div class="capsule-half-top" id="modalCapTop"></div>
+
+      <div class="paper-scroll">
+        <div class="paper-badge" id="quoteNumberBadge">오늘의 쪽지 #01</div>
+        <div class="quote-text" id="quoteText">"천 리 길도 한 걸음부터 시작된다."</div>
+        <div class="quote-author" id="quoteAuthor">— 노자</div>
+        <div class="paper-actions">
+          <button class="action-btn btn-copy" id="copyBtn">문장 복사하기</button>
+          <button class="action-btn btn-again" id="closeModalBtn">다시 뽑기</button>
+        </div>
+      </div>
+
+      <div class="capsule-half-bottom" id="modalCapBottom"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 반실사 수채화·애니메이션 풍경 배경 그리기
+    // ==========================================
+    const canvas = document.getElementById('scenery-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function seededRandom(seed) {
+      let s = seed % 2147483647;
+      if (s <= 0) s += 2147483646;
+      return function () {
+        s = (s * 16807) % 2147483647;
+        return (s - 1) / 2147483646;
+      };
+    }
+
+    function drawLeafBrushstroke(ctx, x, y, size, angle, color, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.55);
+      ctx.bezierCurveTo(size * 0.42, -size * 0.25, size * 0.42, size * 0.25, 0, size * 0.55);
+      ctx.bezierCurveTo(-size * 0.42, size * 0.25, -size * 0.42, -size * 0.25, 0, -size * 0.55);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSoftCloud(ctx, cx, cy, scale, rand) {
+      ctx.save();
+      const puffs = [
+        { dx: 0, dy: 0, r: 44 },
+        { dx: -36, dy: 10, r: 32 },
+        { dx: 38, dy: 8, r: 34 },
+        { dx: -18, dy: -16, r: 30 },
+        { dx: 20, dy: -14, r: 31 },
+        { dx: -62, dy: 18, r: 22 },
+        { dx: 64, dy: 16, r: 24 }
+      ];
+
+      puffs.forEach(p => {
+        const px = cx + p.dx * scale;
+        const py = cy + p.dy * scale;
+        const pr = p.r * scale;
+        const grad = ctx.createRadialGradient(px, py - pr * 0.25, pr * 0.1, px, py, pr);
+        grad.addColorStop(0, 'rgba(255, 254, 248, 0.94)');
+        grad.addColorStop(0.65, 'rgba(252, 248, 232, 0.72)');
+        grad.addColorStop(1, 'rgba(225, 236, 224, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawBranch(ctx, x1, y1, x2, y2, width, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      const midX = (x1 + x2) * 0.5 + (y2 - y1) * 0.12;
+      const midY = (y1 + y2) * 0.5 - Math.abs(x2 - x1) * 0.08;
+      ctx.quadraticCurveTo(midX, midY, x2, y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function renderScenery() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const rand = seededRandom(20260715);
+      const vpX = w * 0.5;
+      const vpY = h * 0.56;
+
+      // 1. 하늘 그라데이션 (따뜻한 초여름 햇살 하늘)
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, vpY + 60);
+      skyGrad.addColorStop(0, '#8EC5E8');
+      skyGrad.addColorStop(0.45, '#BCE0EE');
+      skyGrad.addColorStop(0.8, '#E9F2DC');
+      skyGrad.addColorStop(1, '#FFF8DC');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // 2. 부드러운 뭉게구름
+      drawSoftCloud(ctx, vpX - w * 0.12, h * 0.17, Math.max(0.75, w / 900), rand);
+      drawSoftCloud(ctx, vpX + w * 0.16, h * 0.23, Math.max(0.65, w / 1050), rand);
+      drawSoftCloud(ctx, vpX + w * 0.02, h * 0.31, Math.max(0.55, w / 1200), rand);
+
+      // 3. 나무 사이로 비치는 햇살(태양 광휘)
+      const sunX = vpX + w * 0.03;
+      const sunY = h * 0.26;
+      const sunGlow = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, Math.max(w, h) * 0.52);
+      sunGlow.addColorStop(0, 'rgba(255, 253, 232, 0.96)');
+      sunGlow.addColorStop(0.14, 'rgba(255, 246, 198, 0.65)');
+      sunGlow.addColorStop(0.38, 'rgba(245, 242, 200, 0.22)');
+      sunGlow.addColorStop(1, 'rgba(245, 242, 200, 0)');
+      ctx.fillStyle = sunGlow;
+      ctx.fillRect(0, 0, w, h);
+
+      // 4. 먼 배경 나무 실루엣 (대기 원근감용 은은한 청록빛)
+      for (let i = 0; i < 420; i++) {
+        const lx = vpX + (rand() - 0.5) * w * 0.55;
+        const ly = h * 0.25 + rand() * (vpY - h * 0.22);
+        const size = 10 + rand() * 16;
+        const palette = ['#8FB899', '#A3C9A3', '#B6D6A8', '#7FA88E'];
+        drawLeafBrushstroke(ctx, lx, ly, size, rand() * Math.PI, palette[Math.floor(rand() * palette.length)], 0.55);
+      }
+
+      // 5. 골목길 아스팔트 바닥 (원근 투시)
+      const roadTopW = Math.max(46, w * 0.075);
+      const roadBotW = w * 1.15;
+      const roadGrad = ctx.createLinearGradient(0, vpY, 0, h);
+      roadGrad.addColorStop(0, '#9DA3A6');
+      roadGrad.addColorStop(0.35, '#767C82');
+      roadGrad.addColorStop(1, '#555A60');
+
+      ctx.fillStyle = roadGrad;
+      ctx.beginPath();
+      ctx.moveTo(vpX - roadTopW * 0.5, vpY);
+      ctx.lineTo(vpX + roadTopW * 0.5, vpY);
+      ctx.lineTo(vpX + roadBotW * 0.5, h);
+      ctx.lineTo(vpX - roadBotW * 0.5, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // 아스팔트 질감 미세 입자
+      for (let i = 0; i < 900; i++) {
+        const t = rand();
+        const py = vpY + t * (h - vpY);
+        const halfW = (roadTopW * 0.5) + t * (roadBotW * 0.5 - roadTopW * 0.5);
+        const px = vpX + (rand() * 2 - 1) * halfW;
+        ctx.fillStyle = rand() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(25,28,32,0.09)';
+        ctx.fillRect(px, py, 1.5 + t * 2, 1 + t);
+      }
+
+      // 아스팔트 위 나뭇잎 사이로 쏟아진 얼룩덜룩한 햇빛(코모레비)
+      for (let i = 0; i < 85; i++) {
+        const t = Math.pow(rand(), 0.85);
+        const py = vpY + 8 + t * (h - vpY - 10);
+        const halfW = (roadTopW * 0.42) + t * (roadBotW * 0.42 - roadTopW * 0.42);
+        const px = vpX + (rand() * 2 - 1) * halfW;
+        const rx = (10 + rand() * 28) * (0.35 + t * 0.9);
+        const ry = rx * (0.35 + rand() * 0.2);
+
+        const spotGrad = ctx.createRadialGradient(px, py, 1, px, py, rx);
+        spotGrad.addColorStop(0, 'rgba(255, 248, 208, 0.34)');
+        spotGrad.addColorStop(0.6, 'rgba(246, 238, 190, 0.16)');
+        spotGrad.addColorStop(1, 'rgba(246, 238, 190, 0)');
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.scale(1, ry / rx);
+        ctx.fillStyle = spotGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 6. 양옆 담장과 연석
+      // 왼쪽 모던 스톤 담장
+      const leftWallGrad = ctx.createLinearGradient(0, h * 0.2, vpX, vpY);
+      leftWallGrad.addColorStop(0, '#787368');
+      leftWallGrad.addColorStop(0.6, '#969083');
+      leftWallGrad.addColorStop(1, '#B5B0A4');
+      ctx.fillStyle = leftWallGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.26);
+      ctx.lineTo(vpX - roadTopW * 0.5, vpY - 22);
+      ctx.lineTo(vpX - roadTopW * 0.5, vpY);
+      ctx.lineTo(0, h * 0.84);
+      ctx.closePath();
+      ctx.fill();
+
+      // 왼쪽 담장 가로 줄눈 및 그림자
+      ctx.strokeStyle = 'rgba(65, 60, 52, 0.24)';
+      ctx.lineWidth = 1.5;
+      for (let r = 1; r <= 4; r++) {
+        const ratio = r / 5;
+        ctx.beginPath();
+        ctx.moveTo(0, h * (0.26 + ratio * 0.58));
+        ctx.lineTo(vpX - roadTopW * 0.5, vpY - 22 + ratio * 22);
+        ctx.stroke();
+      }
+
+      // 오른쪽 벽돌·철제 울타리 담장
+      const rightWallGrad = ctx.createLinearGradient(w, h * 0.3, vpX, vpY);
+      rightWallGrad.addColorStop(0, '#8A7E6E');
+      rightWallGrad.addColorStop(0.6, '#A69A89');
+      rightWallGrad.addColorStop(1, '#BEB5A6');
+      ctx.fillStyle = rightWallGrad;
+      ctx.beginPath();
+      ctx.moveTo(w, h * 0.44);
+      ctx.lineTo(vpX + roadTopW * 0.5, vpY - 16);
+      ctx.lineTo(vpX + roadTopW * 0.5, vpY);
+      ctx.lineTo(w, h * 0.84);
+      ctx.closePath();
+      ctx.fill();
+
+      // 7. 우거진 가로수 줄기와 가지들
+      // 왼쪽 큰 나무 줄기
+      drawBranch(ctx, w * 0.04, h * 0.42, w * 0.14, h * 0.12, 16, '#483D35');
+      drawBranch(ctx, w * 0.14, h * 0.12, w * 0.34, h * 0.03, 9, '#54473E');
+      drawBranch(ctx, w * 0.12, h * 0.2, w * 0.28, h * 0.16, 6, '#5C4E44');
+
+      // 오른쪽 큰 나무 줄기 및 아치형 가지
+      drawBranch(ctx, w * 0.94, h * 0.52, w * 0.85, h * 0.14, 18, '#3F352E');
+      drawBranch(ctx, w * 0.85, h * 0.14, w * 0.62, h * 0.02, 10, '#4C4037');
+      drawBranch(ctx, w * 0.86, h * 0.22, w * 0.66, h * 0.18, 7, '#584A40');
+      drawBranch(ctx, w * 0.76, h * 0.12, w * 0.52, h * 0.08, 5, '#635449');
+
+      // 8. 수천 개의 섬세한 나뭇잎 붓터치 (깊은 초록 -> 중간 초록 -> 햇살 투과 연두빛 레이어)
+      const leafClusters = [
+        // 왼쪽 상단 풍성한 수관
+        { cx: w * 0.08, cy: h * 0.08, rx: w * 0.24, ry: h * 0.22, count: 750 },
+        { cx: w * 0.24, cy: h * 0.12, rx: w * 0.18, ry: h * 0.16, count: 520 },
+        // 오른쪽 상단 풍성한 수관
+        { cx: w * 0.92, cy: h * 0.12, rx: w * 0.26, ry: h * 0.26, count: 850 },
+        { cx: w * 0.74, cy: h * 0.14, rx: w * 0.20, ry: h * 0.18, count: 620 },
+        // 상단 중앙을 감싸는 나뭇잎 터널
+        { cx: w * 0.48, cy: h * 0.03, rx: w * 0.28, ry: h * 0.11, count: 560 },
+        // 중경 가로수 잎
+        { cx: vpX - w * 0.14, cy: h * 0.34, rx: w * 0.11, ry: h * 0.12, count: 320 },
+        { cx: vpX + w * 0.14, cy: h * 0.34, rx: w * 0.12, ry: h * 0.13, count: 350 }
+      ];
+
+      const darkGreens = ['#28462A', '#315432', '#3B6339', '#2E4E2E'];
+      const midGreens = ['#4B7B43', '#5A8D4C', '#679C53', '#528347'];
+      const sunlitGreens = ['#88B85C', '#9EC968', '#B6D975', '#CBE48A', '#DFEC9E'];
+
+      // 레이어 1: 깊은 그림자 잎사귀
+      leafClusters.forEach(c => {
+        for (let i = 0; i < c.count * 0.45; i++) {
+          const a = rand() * Math.PI * 2;
+          const r = Math.sqrt(rand());
+          const lx = c.cx + Math.cos(a) * c.rx * r;
+          const ly = c.cy + Math.sin(a) * c.ry * r;
+          const size = 9 + rand() * 14;
+          const col = darkGreens[Math.floor(rand() * darkGreens.length)];
+          drawLeafBrushstroke(ctx, lx, ly, size, rand() * Math.PI, col, 0.88);
+        }
+      });
+
+      // 레이어 2: 중간 톤 잎사귀
+      leafClusters.forEach(c => {
+        for (let i = 0; i < c.count * 0.35; i++) {
+          const a = rand() * Math.PI * 2;
+          const r = Math.sqrt(rand());
+          const lx = c.cx + Math.cos(a) * c.rx * r;
+          const ly = c.cy + Math.sin(a) * c.ry * r;
+          const size = 8 + rand() * 12;
+          const col = midGreens[Math.floor(rand() * midGreens.length)];
+          drawLeafBrushstroke(ctx, lx, ly, size, rand() * Math.PI, col, 0.86);
+        }
+      });
+
+      // 레이어 3: 햇빛을 받아 반투명하게 빛나는 연두빛 잎사귀 (중앙 빛 방향에 가깝게 분포)
+      leafClusters.forEach(c => {
+        for (let i = 0; i < c.count * 0.25; i++) {
+          const a = rand() * Math.PI * 2;
+          const r = Math.sqrt(rand());
+          let lx = c.cx + Math.cos(a) * c.rx * r;
+          let ly = c.cy + Math.sin(a) * c.ry * r;
+          // 햇살 쪽으로 살짝 치우치게 보정
+          lx = lx * 0.88 + sunX * 0.12;
+          ly = ly * 0.92 + sunY * 0.08;
+          const size = 7 + rand() * 11;
+          const col = sunlitGreens[Math.floor(rand() * sunlitGreens.length)];
+          drawLeafBrushstroke(ctx, lx, ly, size, rand() * Math.PI, col, 0.82);
+        }
+      });
+
+      // 9. 나뭇잎 사이로 비스듬히 내리쬐는 은은한 햇살 줄기(God Rays)
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const rays = [
+        { x1: sunX - 20, y1: sunY, x2: vpX - w * 0.25, y2: h, width: 90 },
+        { x1: sunX + 10, y1: sunY, x2: vpX + w * 0.05, y2: h, width: 120 },
+        { x1: sunX + 35, y1: sunY, x2: vpX + w * 0.32, y2: h, width: 85 }
+      ];
+
+      rays.forEach(ray => {
+        const rayGrad = ctx.createLinearGradient(ray.x1, ray.y1, ray.x2, ray.y2);
+        rayGrad.addColorStop(0, 'rgba(255, 250, 215, 0.26)');
+        rayGrad.addColorStop(0.5, 'rgba(255, 246, 200, 0.10)');
+        rayGrad.addColorStop(1, 'rgba(255, 246, 200, 0)');
+
+        ctx.fillStyle = rayGrad;
+        ctx.beginPath();
+        ctx.moveTo(ray.x1 - 12, ray.y1);
+        ctx.lineTo(ray.x1 + 12, ray.y1);
+        ctx.lineTo(ray.x2 + ray.width, ray.y2);
+        ctx.lineTo(ray.x2 - ray.width, ray.y2);
+        ctx.closePath();
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    renderScenery();
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderScenery, 120);
+    });
+
+    // ==========================================
+    // 2. 명언 리스트 (사용자 제공 60개 전체)
+    // ==========================================
+    const quotes = [
+      { text: "천 리 길도 한 걸음부터 시작된다.", author: "노자" },
+      { text: "상상력은 지식보다 더 중요하다.", author: "알베르트 아인슈타인" },
+      { text: "어둠은 어둠으로 몰아낼 수 없고, 오직 빛으로만 몰아낼 수 있다.", author: "마틴 루터 킹 주니어" },
+      { text: "누구도 당신의 동의 없이는 당신이 열등하다고 느끼게 만들 수 없다.", author: "엘리너 루스벨트" },
+      { text: "잃어버린 시간은 다시 찾을 수 없다.", author: "벤저민 프랭클린" },
+      { text: "국민의, 국민에 의한, 국민을 위한 정부는 이 땅에서 사라지지 않을 것이다.", author: "에이브러햄 링컨" },
+      { text: "성찰하지 않는 삶은 살아갈 가치가 없다.", author: "소크라테스" },
+      { text: "세상에 좋고 나쁜 것은 없으며, 그렇게 생각하는 우리의 마음이 있을 뿐이다.", author: "윌리엄 셰익스피어" },
+      { text: "우리는 지금의 모습은 알지만, 앞으로 어떤 모습이 될지는 알지 못한다.", author: "윌리엄 셰익스피어" },
+      { text: "우리의 의심은 우리를 배신하여, 시도조차 하지 못하게 만든다.", author: "윌리엄 셰익스피어" },
+      { text: "희망은 영혼 속에 깃들어 말없이 노래하는 작은 새와 같다.", author: "에밀리 디킨슨" },
+      { text: "세상을 더 나은 곳으로 만들기 위해 단 한순간도 기다릴 필요가 없다는 사실은 얼마나 멋진가.", author: "안네 프랑크" },
+      { text: "내가 더 멀리 볼 수 있었다면, 그것은 거인들의 어깨 위에 서 있었기 때문이다.", author: "아이작 뉴턴" },
+      { text: "마음에는 이성이 알지 못하는 나름의 이유가 있다.", author: "블레즈 파스칼" },
+      { text: "나는 생각한다. 그러므로 나는 존재한다.", author: "르네 데카르트" },
+      { text: "당신의 삶의 행복은 당신 생각의 질에 달려 있다.", author: "마르쿠스 아우렐리우스" },
+      { text: "어려움은 정신을 강하게 만들고, 노동은 몸을 강하게 만든다.", author: "세네카" },
+      { text: "가장 어두운 밤도 끝나고 태양은 떠오른다.", author: "빅토르 위고" },
+      { text: "경험이란 우리가 자신의 실수에 붙이는 이름이다.", author: "오스카 와일드" },
+      { text: "마음의 다정함만큼 사람을 매력적으로 만드는 것은 없다.", author: "제인 오스틴" },
+      { text: "어떤 상황에서도 굳어지지 않는 마음과 지치지 않는 사랑을 가져라.", author: "찰스 디킨스" },
+      { text: "나는 폭풍이 두렵지 않다. 배를 항해하는 법을 배우고 있기 때문이다.", author: "루이자 메이 올컷" },
+      { text: "혼자서는 아주 작은 일밖에 할 수 없지만, 함께라면 훨씬 많은 일을 해낼 수 있다.", author: "헬렌 켈러" },
+      { text: "세상에서 가장 아름다운 것들은 눈으로 볼 수도, 손으로 만질 수도 없다. 마음으로 느껴야 한다.", author: "헬렌 켈러" },
+      { text: "창의력은 사용할수록 사라지는 것이 아니라, 사용할수록 더 많아진다.", author: "마야 안젤루" },
+      { text: "교육은 세상을 바꾸는 데 사용할 수 있는 가장 강력한 무기다.", author: "넬슨 만델라" },
+      { text: "말보다 행동이 더 훌륭한 결과를 만들어 낸다.", author: "벤저민 프랭클린" },
+      { text: "지식에 대한 투자는 언제나 가장 높은 이자를 돌려준다.", author: "벤저민 프랭클린" },
+      { text: "작은 발걸음 하나가 인류에게는 거대한 도약이 될 수 있다.", author: "닐 암스트롱" },
+      { text: "어떤 사람도 하나의 섬처럼 홀로 존재하지 않는다. 우리는 모두 서로 연결되어 있다.", author: "존 던" },
+      { text: "이것은 사람의 마음을 시험하는 시대다.", author: "토머스 페인" },
+      { text: "나는 있는 그대로의 나로 존재한다. 그것만으로도 충분하다.", author: "월트 휘트먼" },
+      { text: "성공은 끝이 아니고, 실패는 치명적이지 않다. 중요한 것은 계속 나아가는 용기다.", author: "윈스턴 처칠" },
+      { text: "우리가 두려워해야 할 것은 두려움 그 자체뿐이다.", author: "프랭클린 D. 루스벨트" },
+      { text: "인생에서 두려워할 것은 없다. 이해해야 할 것이 있을 뿐이다.", author: "마리 퀴리" },
+      { text: "천재는 1퍼센트의 영감과 99퍼센트의 노력으로 이루어진다.", author: "토머스 에디슨" },
+      { text: "우리가 반복해서 하는 일이 곧 우리 자신이 된다. 훌륭함은 행동이 아니라 습관이다.", author: "윌 듀런트" },
+      { text: "자신이 할 수 있다고 믿든, 할 수 없다고 믿든, 당신의 믿음은 대체로 옳다.", author: "헨리 포드" },
+      { text: "삶은 뒤돌아보아야 이해할 수 있지만, 앞으로 나아가며 살아야 한다.", author: "쇠렌 키르케고르" },
+      { text: "사람은 자신이 생각하는 대로의 존재가 된다.", author: "마하트마 간디" },
+      { text: "오직 한없이 가지고 싶은 것은 높은 문화의 힘이다.", author: "김구" },
+      { text: "나는 우리나라가 세계에서 가장 아름다운 나라가 되기를 원한다.", author: "김구" },
+      { text: "문화의 힘은 우리 자신을 행복하게 하고, 나아가 남에게 행복을 주기 때문이다.", author: "김구" },
+      { text: "하루라도 책을 읽지 않으면 입안에 가시가 돋는다.", author: "안중근" },
+      { text: "나라를 위해 몸을 바치는 것이 군인의 본분이다.", author: "안중근" },
+      { text: "이익을 보거든 의로움을 생각하고, 위태로움을 보거든 목숨을 바쳐라.", author: "안중근" },
+      { text: "사람이 멀리 내다보지 않으면 큰일을 이루기 어렵다.", author: "안중근" },
+      { text: "하루하루를 헛되이 보내지 말라. 청춘은 두 번 다시 오지 않는다.", author: "안중근" },
+      { text: "낙망은 청년의 죽음이요, 청년이 죽으면 민족이 죽는다.", author: "안창호" },
+      { text: "청렴은 모든 선의 근원이요, 덕의 바탕이다.", author: "정약용" },
+      { text: "어린이를 내려다보지 마시고, 쳐다보아 주시오.", author: "방정환" },
+      { text: "모든 사람으로 하여금 쉽게 익혀 날마다 쓰는 데 편하게 하고자 할 따름이다.", author: "세종대왕" },
+      { text: "싸움이 급하니 나의 죽음을 적에게 알리지 말라.", author: "이순신" },
+      { text: "나는 당당한 대한의 국민이다. 대한 사람인 내가 너희들의 재판을 받을 필요도 없고, 너희가 나를 처벌할 권리도 없다.", author: "유관순" },
+      { text: "남의 장점은 배우고 잘못은 너그럽게 용서하라.", author: "조광조" },
+      { text: "사느냐 죽느냐, 그것이 문제로다.", author: "윌리엄 셰익스피어" },
+      { text: "나는 꿈이 있습니다. 언젠가 모든 사람이 평등하게 살아가는 날이 오기를 바랍니다.", author: "마틴 루터 킹 주니어" },
+      { text: "한 채의 집이 스스로 갈라서면 그 집은 오래 버틸 수 없다.", author: "에이브러햄 링컨" },
+      { text: "우리가 두려워해야 할 유일한 것은 두려움 그 자체다.", author: "프랭클린 D. 루스벨트" },
+      { text: "작은 시작을 두려워하지 마라. 모든 위대한 일도 작은 시작에서 비롯된다.", author: "노자" }
+    ];
+
+    // ==========================================
+    // 3. 가챠 캡슐 및 인터랙션 로직
+    // ==========================================
+    const capsuleColorPairs = [
+      { top: '#F3E5AB', bottom: '#5A4236' },
+      { top: '#FAF2D0', bottom: '#7B5D4D' },
+      { top: '#E0CE84', bottom: '#5A4236' },
+      { top: '#F3E5AB', bottom: '#8D6E5C' },
+      { top: '#FFF8DF', bottom: '#6B4F41' }
+    ];
+
+    const capsulesContainer = document.getElementById('capsulesContainer');
+    const gachaMachine = document.getElementById('gachaMachine');
+    const dialHandle = document.getElementById('dialHandle');
+    const dialTrigger = document.getElementById('dialTrigger');
+    const drawBtn = document.getElementById('drawBtn');
+    const droppedCapsule = document.getElementById('droppedCapsule');
+    const hintText = document.getElementById('hintText');
+
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalCapTop = document.getElementById('modalCapTop');
+    const modalCapBottom = document.getElementById('modalCapBottom');
+    const quoteNumberBadge = document.getElementById('quoteNumberBadge');
+    const quoteText = document.getElementById('quoteText');
+    const quoteAuthor = document.getElementById('quoteAuthor');
+    const copyBtn = document.getElementById('copyBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    let isSpinning = false;
+    let currentQuoteIndex = 0;
+    let currentColors = capsuleColorPairs[0];
+    let lastDrawnIndex = -1;
+
+    // 돔 안에 아기자기한 캡슐 채우기
+    function populateGlobe() {
+      const positions = [
+        { left: 26, bottom: 16, rot: -18 },
+        { left: 74, bottom: 12, rot: 25 },
+        { left: 124, bottom: 14, rot: -10 },
+        { left: 174, bottom: 15, rot: 32 },
+        { left: 210, bottom: 26, rot: -28 },
+        { left: 16, bottom: 58, rot: 14 },
+        { left: 62, bottom: 54, rot: -35 },
+        { left: 112, bottom: 56, rot: 18 },
+        { left: 162, bottom: 55, rot: -22 },
+        { left: 202, bottom: 66, rot: 12 },
+        { left: 38, bottom: 96, rot: -12 },
+        { left: 88, bottom: 94, rot: 28 },
+        { left: 140, bottom: 96, rot: -26 },
+        { left: 184, bottom: 102, rot: 15 },
+        { left: 72, bottom: 132, rot: -15 },
+        { left: 128, bottom: 134, rot: 22 }
+      ];
+
+      positions.forEach((pos, idx) => {
+        const cap = document.createElement('div');
+        cap.className = 'mini-capsule';
+        const pair = capsuleColorPairs[idx % capsuleColorPairs.length];
+        cap.style.setProperty('--top-color', pair.top);
+        cap.style.setProperty('--bottom-color', pair.bottom);
+        cap.style.setProperty('--rot', `${pos.rot}deg`);
+        cap.style.setProperty('--dx', `${(idx % 2 === 0 ? 1 : -1) * 8}px`);
+        cap.style.left = `${pos.left}px`;
+        cap.style.bottom = `${pos.bottom}px`;
+        cap.style.transform = `rotate(${pos.rot}deg)`;
+
+        const shine = document.createElement('div');
+        shine.className = 'shine';
+        cap.appendChild(shine);
+        capsulesContainer.appendChild(cap);
+      });
+    }
+
+    // 뽑기 실행
+    function startDraw() {
+      if (isSpinning) return;
+      isSpinning = true;
+
+      droppedCapsule.style.display = 'none';
+      drawBtn.disabled = true;
+      hintText.innerHTML = '달그락달그락... 캡슐을 고르는 중!';
+
+      dialHandle.classList.add('spinning');
+      gachaMachine.classList.add('shaking');
+
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * quotes.length);
+      } while (nextIndex === lastDrawnIndex && quotes.length > 1);
+      lastDrawnIndex = nextIndex;
+      currentQuoteIndex = nextIndex;
+
+      currentColors = capsuleColorPairs[Math.floor(Math.random() * capsuleColorPairs.length)];
+
+      setTimeout(() => {
+        gachaMachine.classList.remove('shaking');
+        dialHandle.classList.remove('spinning');
+
+        droppedCapsule.style.setProperty('--drop-top', currentColors.top);
+        droppedCapsule.style.setProperty('--drop-bottom', currentColors.bottom);
+        droppedCapsule.style.display = 'block';
+
+        hintText.innerHTML = '<span class="hint-highlight">배출구의 캡슐을 눌러 열어보세요!</span>';
+        drawBtn.disabled = false;
+        isSpinning = false;
+      }, 1050);
+    }
+
+    // 캡슐 열기 (모달 표시)
+    function openCapsule() {
+      const selected = quotes[currentQuoteIndex];
+      const numStr = String(currentQuoteIndex + 1).padStart(2, '0');
+
+      modalCapTop.style.background = currentColors.top;
+      modalCapBottom.style.background = currentColors.bottom;
+      quoteNumberBadge.textContent = `오늘의 명언 쪽지 #${numStr}`;
+      quoteText.textContent = `"${selected.text}"`;
+      quoteAuthor.textContent = `— ${selected.author}`;
+      copyBtn.textContent = '문장 복사하기';
+
+      modalOverlay.classList.add('active');
+    }
+
+    // 모달 닫기
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+      droppedCapsule.style.display = 'none';
+      hintText.textContent = '한 번 더 뽑아보려면 버튼을 눌러주세요!';
+    }
+
+    // 명언 복사 기능
+    function copyQuote() {
+      const selected = quotes[currentQuoteIndex];
+      const fullText = `"${selected.text}" — ${selected.author}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullText).then(() => {
+          copyBtn.textContent = '복사 완료!';
+          setTimeout(() => { copyBtn.textContent = '문장 복사하기'; }, 1800);
+        });
+      } else {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = fullText;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        copyBtn.textContent = '복사 완료!';
+        setTimeout(() => { copyBtn.textContent = '문장 복사하기'; }, 1800);
+      }
+    }
+
+    drawBtn.addEventListener('click', startDraw);
+    dialTrigger.addEventListener('click', startDraw);
+    droppedCapsule.addEventListener('click', openCapsule);
+    closeModalBtn.addEventListener('click', closeModal);
+    copyBtn.addEventListener('click', copyQuote);
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+
+    populateGlobe();
+  </script>
+</body>
+</html>
